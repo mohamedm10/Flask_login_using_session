@@ -1,44 +1,57 @@
 from flask import Flask, g, redirect, render_template, request, session, url_for
 import os
+from flask_sqlalchemy import SQLAlchemy
+import psycopg2
+
+########## DB CONFIG ##########
+
 
 app = Flask(__name__)
-app.secret_key = 'somesecretkeythatishouldonlyknow'
+app.config['SECRET_KEY'] = 'somesecretkeythatishouldonlyknow'
 
-class User():
 
-    def __init__(self,id,username,password):
-        self.id = id
-        self.username = username
-        self.password = password
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:12345@localhost:5433/login"
+
+db = SQLAlchemy(app)
+
+
+########### MODELS #######
+class User(db.Model):
+
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, nullable=False, unique=True)
+    password = db.Column(db.String, nullable=False)
+    confirm_password = db.Column(db.String, nullable=False)
     
     def __repr__(self): # IF YOU PRINT OUT A USER YOU WILL GET IT IN THIS FORMAT
-        return f'<User: {self.username}> '
+        return f'<User: {self.name}> ' 
 
-users = []
-users.append(User(id=1, username='Mohamed', password = '12345'))        
-
-print (users)
-
-@app.before_request
-def before_request():
-    g.user = None
-
-    if 'user_id' in session:
-        user = [x for x in users if x.id == session['user_id']][0]
-        g.user = user
+@app.before_first_request 
+def create_tables():
+    db.create_all() # FOR CREATING MODELS ON LIVE SERVERS 
+    
+    
+@app.route('/')
+def home():
+    
+    return render_template('login.html')    
 
 @app.route('/login', methods=['POST','GET'])
 def login():
     if request.method == 'POST':
         session.pop('user_id', None) # drops session before request is made
 
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password'] 
 
-        user = [x for x in users if x.username == username][0]
-        if user and user.password == password:
-            session['user_id'] = user.id
-            return redirect(url_for('profile'))
+        user = User.query.filter_by(email = email).first()
+        if user is not None:
+            if user.password == password:
+                session['user_id'] = user.id
+                return redirect(url_for('profile'))
+            
 
         return redirect(url_for('login'))
 
@@ -46,8 +59,8 @@ def login():
 
 @app.route('/profile')
 def profile():
-    if not g.user:
-        return redirect(url_for('login'))
+    # if not g.user:
+    #     return redirect(url_for('login'))
     return render_template('profile.html')
 
 @app.route('/register', methods=['POST','GET'])
@@ -55,3 +68,8 @@ def register():
    
     return render_template('register.html')
 
+@app.route('/users')
+def users():
+    all_users = User.query.all()
+
+    return render_template('users.html',all_users=all_users)

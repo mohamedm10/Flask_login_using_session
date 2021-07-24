@@ -13,14 +13,22 @@
         <div class="hero-body">
         
     
-            <form method="POST">
+            <form class="form-group" method="POST">
                 <div class="field">
-                    <label class="label">Username</label>
-                    <input type="text" name='username'>
+                    <label class="label">Name</label>
+                    <input type="text" name='name' >
+                </div>
+                <div class="field">
+                    <label class="label">Email</label>
+                    <input type="text" name='email' >
                 </div>
                 <div class="field">
                     <label class="label">Password</label>
-                    <input type="password" name='password'>
+                    <input type="password" name='password' > 
+                </div>
+                <div class="field">
+                    <label class="label">Confirm Password</label>
+                    <input type="password" name='confirm_password' >
                 </div>
                 <button type="submit">Register</button>
             </form>
